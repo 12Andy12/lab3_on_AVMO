@@ -2,47 +2,62 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#include <iomanip>
+#include <algorithm>
+#include <cmath>
+#include <Windows.h>
+#include <conio.h>
+#include "Header.h"
+
 
 using namespace std;
 
-class fogel {
-public:
-	fogel(int n, int m) {
-		vector<vector <int> > new_matrix1(n + 1, vector<int>(m + 1, 0));
-		matrix = new_matrix1;
-		vector<vector <bool> > new_matrix2(n + 1, vector<bool>(m + 1, false));
-		deleted = new_matrix2;
-		horizontal.resize(n + 1);
-		vertical.resize(m + 1);
-	}
-	vector<vector <int> > matrix;
-	vector<vector <bool> > deleted;
-	vector<int> vertical;
-	vector<int> horizontal;
+HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	void calc()
+ostream& operator<< (ostream& out, fogel f)
+{
+	for (int i = 0; i < f.matrix.size(); ++i)
 	{
-
-		for (int i = 0; i < matrix.size(); ++i)
+		for (int j = 0; j < f.matrix[i].size(); ++j)
 		{
-			vector<int> line = matrix[i];
-			sort(line.begin(), line.end());
-			horizontal[i] = line[1] - line[0];
-		}
 
-		for (int j = 0; j < matrix[0].size(); ++j)
-		{
-			vector<int> column;
-			for (int i = 0; i < matrix.size(); ++i)
-				column.push_back(matrix[i][j]);
-			sort(column.begin(), column.end());
-			vertical[j] = column[1] - column[0];
+			if (f.matrix[i][j].res!=0)
+			{
+				SetConsoleTextAttribute(h, 4);
+				out << setw(3) << f.matrix[i][j].res;
+			}
+			else if (f.matrix[i][j].used == true)
+			{
+				SetConsoleTextAttribute(h, 0);
+				out << setw(3) << f.matrix[i][j].val;
+			}
+			else
+			{
+				SetConsoleTextAttribute(h, 15);
+				out << setw(3) << f.matrix[i][j].val;
+			}
+				
 		}
-
+		SetConsoleTextAttribute(h, 15);
+		out << "|" << setw(5) << f.supply[i] << setw(5) << f.horizontal[i] << "\n";
 	}
-};
+
+	SetConsoleTextAttribute(h, 15);
+	for (int i = 0; i < f.matrix[0].size(); ++i)
+		out << "---";
+	out << "\n";
+
+	for (auto i : f.needs)
+		out << setw(3) << i;
+	out << "\n";
+
+	for (auto i : f.vertical)
+		out << setw(3) << i;
+	out << '\n';
 
 
+	return out;
+}
 
 ostream& operator<< (ostream& out, vector<vector<int>> v)
 {
@@ -54,27 +69,7 @@ ostream& operator<< (ostream& out, vector<vector<int>> v)
 	return out;
 }
 
-ostream& operator<< (ostream& out, fogel f)
-{
-	for (int i = 0; i < f.matrix.size(); ++i)
-	{
-		for (int j = 0; j < f.matrix[i].size(); ++j)
-		{
-			if (f.deleted[i][j] == true)
-				out << "- ";
-			else
-				out << f.matrix[i][j] << ' ';
-		}
 
-		out << f.horizontal[i] << "\n";
-	}
-
-	for (auto i : f.vertical)
-		out << i << ' ';
-	out << '\n';
-
-	return out;
-}
 
 
 
@@ -86,20 +81,61 @@ fogel read(string fileName)
 	file >> n >> m;
 	fogel table(n, m);
 
-	for (int i = 0; i < n + 1; ++i)
-		for (int j = 0; j < m + 1; ++j)
-			file >> table.matrix[i][j];
+	for (int i = 0; i < n; ++i)
+	{
+		for (int j = 0; j < m; ++j)
+			file >> table.matrix[i][j].val;
+		file >> table.supply[i];
+	}
 
-	table.calc();
-
-
-
+	for (int i = 0; i < m; ++i)
+		file >> table.needs[i];
 
 	return table;
+}
+
+bool complited(fogel table)
+{
+	for (auto i : table.needs)
+		if (i != 0)
+			return false;
+
+	return true;
+}
+
+int allNeeds(fogel table)
+{
+	int sum = 0;
+	for (auto i : table.needs)
+		sum += i;
+	return sum;
+}
+
+int allHaves(fogel table)
+{
+	int sum = 0;
+	for (auto i : table.supply)
+		sum += i;
+	return sum;
 }
 
 
 int main()
 {
-	cout << read("1.txt");
+	fogel table = read("1.txt");
+	if (allNeeds(table) > allHaves(table))
+	{
+		vector<cell> fictitious_supplier(table.matrix[0].size());
+		table.matrix.push_back(fictitious_supplier);
+		table.supply.push_back(allNeeds(table) - allHaves(table));
+		table.horizontal.push_back(0);
+	}
+	while (!complited(table))
+	{
+		table.calculateVH();
+		table.calulateSN();
+		cout << table << "\n";
+	}
+	 
+	
 }
