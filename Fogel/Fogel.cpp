@@ -130,6 +130,16 @@ int main()
 		table.supply.push_back(allNeeds(table) - allHaves(table));
 		table.horizontal.push_back(0);
 	}
+	if (allNeeds(table) < allHaves(table))
+	{
+		for (int i = 0; i < table.matrix.size(); ++i) 
+		{
+			cell a;
+			table.matrix[i].push_back(a);
+		}
+		table.vertical.push_back(0);
+		table.needs.push_back(allHaves(table) - allNeeds(table));
+	}
 	while (!complited(table))
 	{
 		table.calculateVH();
