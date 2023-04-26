@@ -5,6 +5,7 @@
 class fogel {
 public:
 	fogel(int n, int m) {
+		
 		vector<vector <cell> > new_matrix(n, vector<cell>(m));
 		matrix = new_matrix;
 		horizontal.resize(n);
@@ -24,10 +25,13 @@ public:
 
 	void calulateSN()
 	{
+		//cerr << "\nidCol = " << idCol << "; idRow = " << idRow << "\n";
 		int need = needs[idCol];
 		int have = supply[idRow];
 
-		if (have >= need)
+		//cerr << "\n needs[idCol] = " << need << "; supply[idRow] = " << have << "\n";
+
+		if (have > need)
 		{
 			matrix[idRow][idCol].res = need;
 			have -= need;
@@ -35,6 +39,7 @@ public:
 			for (int i = 0; i < matrix.size(); ++i)
 				matrix[i][idCol].used = true;
 		}
+
 		else if (need > have)
 		{
 			matrix[idRow][idCol].res = have;
@@ -42,6 +47,16 @@ public:
 				matrix[idRow][i].used = true;
 			need -= have;
 			have -= have; // = 0
+		}
+		else if (need == have)
+		{
+			matrix[idRow][idCol].res = need;
+			for (int i = 0; i < matrix.size(); ++i)
+				matrix[i][idCol].used = true;
+			for (int i = 0; i < matrix[0].size(); ++i)
+				matrix[idRow][i].used = true;
+			need = 0;
+			have = 0; 
 		}
 
 		needs[idCol] = need;
@@ -61,8 +76,10 @@ public:
 			sort(row.begin(), row.end());
 			if (row.size()>=2)
 				horizontal[i] = row[1].val - row[0].val;
-			else 
+			else if (row.size() == 1)
 				horizontal[i] = 0;
+			else 
+				horizontal[i] = -1;
 		}
 		 
 		for (int j = 0; j < matrix[0].size(); ++j)
@@ -74,10 +91,15 @@ public:
 					column.push_back(matrix[i][j].val);
 
 			sort(column.begin(), column.end());
+
+			//cout << "column[" << j << "] = " << column << "\n";
+
 			if (column.size() >= 2)
 				vertical[j] = column[1] - column[0];
-			else 
+			else if (column.size() == 1)
 				vertical[j] = 0;
+			else
+				vertical[j] = -1;
 		}
 
 		idV = max_id(vertical);
@@ -86,7 +108,7 @@ public:
 		//cout << "\n horizontal id = " << idH << ";\n vertical id = " << idV << "\n";
 		//cout << "\n horizontal[idH] = " << horizontal[idH] << ";\n vertical[idV] = " << vertical[idV] << "\n";
 
-		if (horizontal[idH] > vertical[idV])
+		if (horizontal[idH] >= vertical[idV])
 		{
 			idRow = idH;
 			idCol = min_id(matrix[idRow]);

@@ -8,6 +8,7 @@
 #include <Windows.h>
 #include <conio.h>
 #include "Header.h"
+#include <string>
 
 
 using namespace std;
@@ -21,7 +22,7 @@ ostream& operator<< (ostream& out, fogel f)
 		for (int j = 0; j < f.matrix[i].size(); ++j)
 		{
 
-			if (f.matrix[i][j].res!=0)
+			if (f.matrix[i][j].res != 0)
 			{
 				SetConsoleTextAttribute(h, 4);
 				out << setw(3) << f.matrix[i][j].res;
@@ -36,10 +37,14 @@ ostream& operator<< (ostream& out, fogel f)
 				SetConsoleTextAttribute(h, 15);
 				out << setw(3) << f.matrix[i][j].val;
 			}
-				
+
 		}
 		SetConsoleTextAttribute(h, 15);
-		out << "|" << setw(5) << f.supply[i] << setw(5) << f.horizontal[i] << "\n";
+		out << "|" << setw(5) << f.supply[i];
+		if (f.horizontal[i] == -1)
+			out << setw(5) << "-" << "\n";
+		else
+			out << setw(5) << f.horizontal[i] << "\n";
 	}
 
 	SetConsoleTextAttribute(h, 15);
@@ -48,11 +53,20 @@ ostream& operator<< (ostream& out, fogel f)
 	out << "\n";
 
 	for (auto i : f.needs)
+	{
 		out << setw(3) << i;
+	}
+
 	out << "\n";
 
 	for (auto i : f.vertical)
-		out << setw(3) << i;
+	{
+		if (i == -1)
+			out << setw(3) << '-';
+		else
+			out << setw(3) << i;
+	}
+
 	out << '\n';
 
 
@@ -69,16 +83,24 @@ ostream& operator<< (ostream& out, vector<vector<int>> v)
 	return out;
 }
 
+ostream& operator<< (ostream& out, vector<int> v)
+{
+	for (auto i : v) {
+		out << i << ' ';
+	}
+	return out;
+}
 
 
 
 
 fogel read(string fileName)
 {
-	ifstream file;
-	file.open(fileName);
+	ifstream file(fileName);
 	int n, m;
+
 	file >> n >> m;
+
 	fogel table(n, m);
 
 	for (int i = 0; i < n; ++i)
@@ -122,7 +144,8 @@ int allHaves(fogel table)
 
 int main()
 {
-	fogel table = read("1.txt");
+	fogel table = read("3.txt");
+
 	if (allNeeds(table) > allHaves(table))
 	{
 		vector<cell> fictitious_supplier(table.matrix[0].size());
@@ -130,9 +153,10 @@ int main()
 		table.supply.push_back(allNeeds(table) - allHaves(table));
 		table.horizontal.push_back(0);
 	}
+
 	if (allNeeds(table) < allHaves(table))
 	{
-		for (int i = 0; i < table.matrix.size(); ++i) 
+		for (int i = 0; i < table.matrix.size(); ++i)
 		{
 			cell a;
 			table.matrix[i].push_back(a);
@@ -140,12 +164,22 @@ int main()
 		table.vertical.push_back(0);
 		table.needs.push_back(allHaves(table) - allNeeds(table));
 	}
+
+	cout << "__________________________________________________________________________\n" << table << "__________________________________________________________________________\n";
+
 	while (!complited(table))
 	{
 		table.calculateVH();
 		table.calulateSN();
-		cout << table << "\n";
+		table.calculateVH();
+		cout << "__________________________________________________________________________\n" << table << "__________________________________________________________________________\n";
 	}
-	 
-	
+
+	int z = 0;
+
+	for (int i = 0; i < table.matrix.size(); ++i)
+		for (int j = 0; j < table.matrix[0].size(); ++j)
+			z += table.matrix[i][j].res * table.matrix[i][j].val;
+
+	cout << "\nZ = " << z;
 }
